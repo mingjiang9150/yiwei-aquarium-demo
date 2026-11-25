@@ -168,7 +168,7 @@ dialog input { width: 100%; border: 1px solid #adbfaf; border-radius: 9px; paddi
       </div>
     </section>
     <aside class="library" aria-labelledby="fish-label">
-      <div class="section-heading"><h2 id="fish-label">选鱼</h2><span id="fish-limit" aria-live="polite">7 / 14 条</span></div>
+      <div class="section-heading"><h2 id="fish-label">选鱼</h2><span id="fish-limit" aria-live="polite">9 / 14 条</span></div>
       <p class="library-hint">点鱼图看细节，用 ＋ 和 − 调整数量。</p>
       <div id="species" class="species-list"></div>
     </aside>
@@ -201,7 +201,7 @@ const kinds = [
   {key:'danio', name:'斑马鱼', note:'深色细条纹从鱼头延伸到尾部，游得轻快。', length:78, lane:282, speed:.65, count:0},
   {key:'pleco', name:'清道夫', note:'豹纹、宽胸鳍和下位吸盘口，喜欢贴近缸底。', length:117, lane:497, speed:.27, count:0},
   {key:'betta', name:'斗鱼', note:'靛蓝色的长鳍舒展开，像一小片薄绸。', length:117, lane:319, speed:.39, count:1},
-  {key:'angelfish', name:'神仙鱼', note:'高高的三角形背鳍和两根细长腹鳍最容易辨认。', length:97, lane:394, speed:.31, count:1},
+  {key:'angelfish', name:'神仙鱼', note:'高高的三角形背鳍和两根细长腹鳍最容易辨认。', length:97, lane:394, speed:.31, count:3},
   {key:'arowana', name:'龙鱼', note:'上翘的嘴、大鳞片和修长鱼身，沿上层水域巡游。', length:166, lane:224, speed:.36, count:0},
   {key:'neon', name:'红绿灯', note:'体侧有一线亮蓝，尾部下方是一抹红。', length:68, lane:319, speed:.63, count:2},
   {key:'parrot', name:'鹦鹉鱼', note:'橙红的圆身和短短的喙状嘴，是血鹦鹉的特征。', length:124, lane:415, speed:.4, count:0},
@@ -216,6 +216,7 @@ const world = {width:960, height:640, left:47, right:913, surface:148, bottom:56
 const tankCrop = {x:42, y:81, width:874, height:493};
 const maxFish = 14;
 const storageKey = 'deskreef-painted-v2';
+const previousDefaultCounts = [2,0,1,0,0,1,1,0,2,0];
 const defaultTitle = '我的桌面鱼缸';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const get = id => document.getElementById(id);
@@ -248,9 +249,13 @@ function load() {
   let saved;
   try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch {}
   saved ??= {};
+  // Carry the new default to earlier tanks that still have the original selection.
+  const oldDefaults = !saved.populationVersion &&
+    Array.isArray(saved.counts) && saved.counts.length === previousDefaultCounts.length &&
+    previousDefaultCounts.every((count,i) => saved.counts[i] === count);
   let slots = maxFish;
   const counts = kinds.map(({count}, i) => {
-    const value = saved.counts?.[i];
+    const value = oldDefaults ? count : saved.counts?.[i];
     const current = clamp(Number.isInteger(value) ? value : count, 0, slots);
     slots -= current;
     return current;
@@ -262,6 +267,7 @@ function load() {
     date,
     fed: saved.date === date && Number.isInteger(saved.fed) && saved.fed > 0 ? saved.fed : 0,
     counts,
+    populationVersion: 2,
   };
 }
 
